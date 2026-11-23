@@ -39,7 +39,7 @@ jobs:
           useradd --create-home --shell /bin/bash builder
           echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
           chmod 0440 /etc/sudoers.d/builder
-          mkdir -p /home/builder/.cache/vcpkg
+          mkdir -p /home/builder/.cache/vcpkg/downloads
           chown -R builder:builder /home/builder
 
       - name: Check out packaging repository

@@ -11,8 +11,8 @@ epoch=1
 pkgver="${LADYBIRD_VERSION:?LADYBIRD_VERSION must be set by the CI job}"
 pkgrel=1
 pkgdesc='Truly independent web browser'
-# Built with -march=x86-64-v3 in CI (see scripts/release_bot.py), hence the v3 arch label.
-arch=(x86_64_v3)
+# Set by CI (see scripts/release_bot.py): x86_64_v3 or the generic x86_64.
+arch=("${PACKAGE_ARCH:?PACKAGE_ARCH must be set by the CI job}")
 url='https://github.com/LadybirdBrowser/ladybird'
 license=(BSD-2-Clause)
 depends=(
@@ -87,8 +87,8 @@ prepare() {
     -S ladybird \
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_FLAGS='-march=x86-64-v3' \
-    -DCMAKE_CXX_FLAGS='-march=x86-64-v3' \
+    -DCMAKE_C_FLAGS="${MARCH_FLAG:?MARCH_FLAG must be set by the CI job}" \
+    -DCMAKE_CXX_FLAGS="${MARCH_FLAG:?MARCH_FLAG must be set by the CI job}" \
     -DLADYBIRD_VERSION="${pkgver}" \
     ${use_linker} \
     -DLADYBIRD_VCPKG_TYPE=distribution \

@@ -1,6 +1,6 @@
 # ladybird-archlinux-pkg
 
-Builds an **Arch Linux (`x86_64_v3`)** package of every upstream
+Builds **two Arch Linux packages** (`x86_64_v3` and generic `x86_64`) of every upstream
 [Ladybird](https://github.com/LadybirdBrowser/ladybird) tag release, entirely in
 GitHub Actions, and attaches the resulting `.pkg.tar.zst` to a GitHub release in
 this repository.
@@ -8,13 +8,18 @@ this repository.
 Nothing is compiled locally. The AUR is not involved — the package is only
 published as a GitHub release asset here.
 
-## Build target
+## Build targets
 
-The package is optimized for the **x86-64-v3** microarchitecture level (AVX2,
-BMI1/BMI2, FMA, etc.). This is applied to Ladybird's own C/C++ code, to the
-libraries built by vcpkg, and to the Rust components (`target-cpu=x86-64-v3`).
-The resulting package is labelled `x86_64_v3` and therefore requires a
-v3-capable CPU (e.g. CachyOS on a modern Intel/AMD processor) to install and run.
+Every release carries two packages:
+
+| Package | Target |
+| --- | --- |
+| `x86_64_v3` | Optimized for the **x86-64-v3** microarchitecture level (AVX2, BMI1/BMI2, FMA). Requires a v3-capable CPU; this is what CachyOS uses. |
+| `x86_64` | Generic baseline x86-64, installable on any x86-64 Arch Linux system. |
+
+The architecture flags are applied to Ladybird's own C/C++ code, to the libraries
+built by vcpkg, and to the Rust components (`target-cpu=x86-64-v3` /
+`target-cpu=x86-64`).
 
 ## How it works
 
