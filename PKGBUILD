@@ -11,8 +11,8 @@ epoch=1
 pkgver="${LADYBIRD_VERSION:?LADYBIRD_VERSION must be set by the CI job}"
 pkgrel=1
 pkgdesc='Truly independent web browser'
-# Set by CI (see scripts/release_bot.py): x86_64_v3 or the generic x86_64.
-arch=("${PACKAGE_ARCH:?PACKAGE_ARCH must be set by the CI job}")
+# Built with -march=x86-64-v3 (see patches/v3-cpu-target.patch).
+arch=(x86_64_v3)
 url='https://github.com/LadybirdBrowser/ladybird'
 license=(BSD-2-Clause)
 depends=(
@@ -53,12 +53,14 @@ source=(
   "git+https://github.com/microsoft/vcpkg.git#commit=${VCPKG_COMMIT:?VCPKG_COMMIT must be set by the CI job}"
   'hb-fc-whole-archive.patch'
   'gcc-build.patch'
+  'v3-cpu-target.patch'
 )
 sha256sums=(
   'SKIP'
   'SKIP'
   'e268aed76a27dc8519be00f6c30a59ce2339683127839f8e097d14d92d7b4268'
   '74cc7d68b7531f3fbe0eab9500a79d90f4f5b5ee8e02bcf0d94fbd980a50c2b0'
+  '4ad65e72cd1d005d7aa144394442036631cfb54da7c996d1667eb60c9c1d2973'
 )
 
 prepare() {
@@ -79,6 +81,7 @@ prepare() {
 
   patch -d ladybird -p1 < hb-fc-whole-archive.patch
   patch -d ladybird -p1 < gcc-build.patch
+  patch -d ladybird -p1 < v3-cpu-target.patch
 
   "${VCPKG_ROOT}/bootstrap-vcpkg.sh" -disableMetrics
 
@@ -88,8 +91,6 @@ prepare() {
     -S ladybird \
     -DBUILD_SHARED_LIBS=OFF \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_FLAGS="${MARCH_FLAG:?MARCH_FLAG must be set by the CI job}" \
-    -DCMAKE_CXX_FLAGS="${MARCH_FLAG:?MARCH_FLAG must be set by the CI job}" \
     -DLADYBIRD_VERSION="${pkgver}" \
     ${use_linker} \
     -DLADYBIRD_VCPKG_TYPE=distribution \

@@ -30,11 +30,8 @@ THIS_REPO = os.environ.get("GITHUB_REPOSITORY", "")
 INPUT_TAG = (os.environ.get("INPUT_TAG") or "").strip()
 MAX_COMMITS_SHOWN = 200
 
-# Two packages are produced for every tag and attached to the same release.
-VARIANTS = [
-    {"arch": "x86_64_v3", "march": "-march=x86-64-v3", "rust_cpu": "x86-64-v3"},
-    {"arch": "x86_64", "march": "-march=x86-64", "rust_cpu": "x86-64"},
-]
+# One package per tag: optimized for the x86-64-v3 microarchitecture level.
+PACKAGE_ARCH = "x86_64_v3"
 
 
 def log(*parts: object) -> None:
@@ -195,8 +192,8 @@ def render_notes(tag: str, previous: str | None, commits: list[dict], stats: dic
     )
     lines.append("")
     lines.append(
-        "Two build variants are attached below: `x86_64_v3` (AVX2/BMI2/FMA optimized) "
-        "and generic `x86_64`."
+        "Attached package: `x86_64_v3`, optimized for the x86-64-v3 microarchitecture "
+        "level (AVX2, BMI1/BMI2, FMA)."
     )
     if previous:
         lines.append(
@@ -264,12 +261,9 @@ def render_notes(tag: str, previous: str | None, commits: list[dict], stats: dic
     return "\n".join(lines)
 
 
-def build_package(
-    tag: str, baseline: str, rust_ver: str, repo_root: Path, variant: dict[str, str]
-) -> Path:
-    arch = variant["arch"]
-    workdir = Path(tempfile.mkdtemp(prefix=f"ladybird-pkg-{arch}-"))
-    log(f"building {tag} for {arch} in {workdir}")
+def build_package(tag: str, baseline: str, rust_ver: str, repo_root: Path) -> Path:
+    workdir = Path(tempfile.mkdtemp(prefix=f"ladybird-pkg-{PACKAGE_ARCH}-"))
+    log(f"building {tag} for {PACKAGE_ARCH} in {workdir}")
 
     # Upstream pins an exact Rust version; a newer distro rustc turns upstream
     # deprecation warnings into errors (-D warnings), so use the pinned one.
@@ -280,48 +274,42 @@ def build_package(
         ],
         check=True,
     )
-    for name in ("PKGBUILD", "patches/hb-fc-whole-archive.patch", "patches/gcc-build.patch"):
+    for name in (
+        "PKGBUILD",
+        "patches/hb-fc-whole-archive.patch",
+        "patches/gcc-build.patch",
+        "patches/v3-cpu-target.patch",
+    ):
         src = repo_root / name
         dst = workdir / Path(name).name
         shutil.copy2(src, dst)
 
-    # The PKGBUILD's arch/PACKAGE_ARCH comes from the variant, so makepkg must be
-    # told to use that CARCH instead of the container's generic x86_64. Later
-    # assignments in a makepkg.conf override earlier ones, so append overrides.
+    # makepkg must use x86_64_v3 as CARCH instead of the container's generic x86_64.
+    # Later assignments in a makepkg.conf override earlier ones, so append overrides.
     downloads = Path(os.environ.get("HOME", "/home/builder")) / ".cache/vcpkg/downloads"
     downloads.mkdir(parents=True, exist_ok=True)
 
     makepkg_conf = workdir / "makepkg-arch.conf"
     makepkg_conf.write_text(
         Path("/etc/makepkg.conf").read_text(encoding="utf-8")
-        + f"\n# --- {arch} overrides added by release_bot.py ---\n"
-        + f'CARCH="{arch}"\n'
-        + f'CFLAGS="{variant["march"]} -O2 -pipe -fno-plt -fexceptions"\n'
-        + 'CXXFLAGS="$CFLAGS -Wp,-D_GLIBCXX_ASSERTIONS"\n',
+        + f"\n# --- {PACKAGE_ARCH} overrides added by release_bot.py ---\n"
+        + f'CARCH="{PACKAGE_ARCH}"\n',
         encoding="utf-8",
     )
 
+    home = os.environ.get("HOME", "/home/builder")
     env = os.environ.copy()
     env.update(
         {
             "LADYBIRD_VERSION": tag,
             "VCPKG_COMMIT": baseline,
-            "PACKAGE_ARCH": arch,
-            "MARCH_FLAG": variant["march"],
             "MAKEFLAGS": "-j2",
             "CMAKE_BUILD_PARALLEL_LEVEL": "2",
             "VCPKG_DOWNLOADS": str(downloads),
             "RUSTUP_TOOLCHAIN": rust_ver,
-            "RUSTUP_HOME": str(Path(os.environ.get("HOME", "/home/builder")) / ".rustup"),
-            "CARGO_HOME": str(Path(os.environ.get("HOME", "/home/builder")) / ".cargo"),
-            "PATH": str(Path(os.environ.get("HOME", "/home/builder")) / ".cargo/bin")
-            + os.pathsep
-            + os.environ.get("PATH", "/usr/bin:/bin"),
-            # Apply the same architecture flags to third-party vcpkg libraries.
-            "VCPKG_C_FLAGS": variant["march"],
-            "VCPKG_CXX_FLAGS": variant["march"],
-            # And to Ladybird's Rust components.
-            "RUSTFLAGS": f'-C target-cpu={variant["rust_cpu"]}',
+            "RUSTUP_HOME": str(Path(home) / ".rustup"),
+            "CARGO_HOME": str(Path(home) / ".cargo"),
+            "PATH": str(Path(home) / ".cargo/bin") + os.pathsep + os.environ.get("PATH", "/usr/bin:/bin"),
         }
     )
     subprocess.run(
@@ -337,7 +325,7 @@ def build_package(
 
 
 def publish(tag: str, packages: list[Path], notes_file: Path) -> None:
-    title = f"Ladybird {tag} — Arch Linux packages"
+    title = f"Ladybird {tag} — Arch Linux package (x86-64-v3)"
     view = gh(["release", "view", tag, "--repo", THIS_REPO], check=False)
     if view.returncode == 0:
         log(f"release {tag} exists, uploading/replacing assets")
@@ -418,9 +406,7 @@ def main() -> int:
 
         baseline = vcpkg_baseline(tag)
         rust_ver = rust_channel(tag)
-        packages = [
-            build_package(tag, baseline, rust_ver, repo_root, variant) for variant in VARIANTS
-        ]
+        packages = [build_package(tag, baseline, rust_ver, repo_root)]
         publish(tag, packages, notes_file)
         log(f"published for {tag}: {', '.join(p.name for p in packages)}")
 

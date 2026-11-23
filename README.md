@@ -1,6 +1,6 @@
 # ladybird-archlinux-pkg
 
-Builds **two Arch Linux packages** (`x86_64_v3` and generic `x86_64`) of every upstream
+Builds an **Arch Linux `x86_64_v3` package** of every upstream
 [Ladybird](https://github.com/LadybirdBrowser/ladybird) tag release, entirely in
 GitHub Actions, and attaches the resulting `.pkg.tar.zst` to a GitHub release in
 this repository.
@@ -8,18 +8,13 @@ this repository.
 Nothing is compiled locally. The AUR is not involved — the package is only
 published as a GitHub release asset here.
 
-## Build targets
+## Build target
 
-Every release carries two packages:
-
-| Package | Target |
-| --- | --- |
-| `x86_64_v3` | Optimized for the **x86-64-v3** microarchitecture level (AVX2, BMI1/BMI2, FMA). Requires a v3-capable CPU; this is what CachyOS uses. |
-| `x86_64` | Generic baseline x86-64, installable on any x86-64 Arch Linux system. |
-
-The architecture flags are applied to Ladybird's own C/C++ code, to the libraries
-built by vcpkg, and to the Rust components (`target-cpu=x86-64-v3` /
-`target-cpu=x86-64`).
+The package is optimized for the **x86-64-v3** microarchitecture level (AVX2,
+BMI1/BMI2, FMA) and labelled `x86_64_v3`. It requires a v3-capable CPU (such as
+CachyOS on a modern Intel/AMD processor). The CPU flags are applied to Ladybird's
+own C++ code and Rust components via
+[`patches/v3-cpu-target.patch`](patches/v3-cpu-target.patch).
 
 ## How it works
 
@@ -34,7 +29,7 @@ runs on a schedule (every 6 hours) and can also be triggered manually. In an
      release notes containing the **new commits, their descriptions, stats and
      contributors** (see [`scripts/release_bot.py`](scripts/release_bot.py));
    - reads the exact `vcpkg` baseline pinned by that tag's `vcpkg.json`;
-   - runs `makepkg` using [`PKGBUILD`](PKGBUILD) and the two patches in
+   - runs `makepkg` using [`PKGBUILD`](PKGBUILD) and the patches in
      [`patches/`](patches/) to build the package;
    - creates a release named after the tag (e.g. `2026.47.7`) and uploads the
      package to it.

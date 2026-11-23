@@ -1,0 +1,8 @@
+diff --git a/Meta/CMake/compile_options.cmake b/Meta/CMake/compile_options.cmake
+--- a/Meta/CMake/compile_options.cmake
++++ b/Meta/CMake/compile_options.cmake
+@@ -80,2 +80,2 @@
+-    add_cxx_compile_options(-march=native)
+-    set(RUSTC_TARGET_CPU_FLAGS -Ctarget-cpu=native)
++    add_cxx_compile_options(-march=x86-64-v3)
++    set(RUSTC_TARGET_CPU_FLAGS -Ctarget-cpu=x86-64-v3)
