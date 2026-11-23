@@ -1,0 +1,69 @@
+name: Package Ladybird releases for Arch Linux
+
+# Builds an Arch Linux (x86_64) package of every new Ladybird tag release and
+# attaches it to a GitHub release in this repository. Compilation happens only
+# inside this CI job (Arch Linux container); nothing is built locally.
+
+on:
+  schedule:
+    # Check for new Ladybird tag releases every 6 hours.
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Build a specific Ladybird tag (blank = all not-yet-packaged tags)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ladybird-archlinux-packaging
+  cancel-in-progress: false
+
+jobs:
+  package:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Bootstrap the Arch build container
+        run: |
+          set -euo pipefail
+          pacman -Syu --noconfirm --needed \
+            base-devel git sudo github-cli jq python rust ccache
+          useradd --create-home --shell /bin/bash builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+          chmod 0440 /etc/sudoers.d/builder
+          mkdir -p /home/builder/.cache/vcpkg
+          chown -R builder:builder /home/builder
+
+      - name: Check out packaging repository
+        uses: actions/checkout@v4
+
+      - name: Restore vcpkg download cache
+        uses: actions/cache@v4
+        with:
+          path: /home/builder/.cache/vcpkg
+          key: vcpkg-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-
+
+      - name: Hand workspace to the unprivileged builder
+        run: chown -R builder:builder "$GITHUB_WORKSPACE"
+
+      - name: Build packages and publish releases
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          runuser -u builder -- env \
+            HOME=/home/builder \
+            GH_TOKEN="$GH_TOKEN" \
+            GITHUB_REPOSITORY="$GITHUB_REPOSITORY" \
+            INPUT_TAG="$INPUT_TAG" \
+            python3 "$GITHUB_WORKSPACE/scripts/release_bot.py" "$GITHUB_WORKSPACE"
