@@ -123,6 +123,22 @@ def vcpkg_baseline(tag: str) -> str:
     return match.group(1)
 
 
+def rust_channel(tag: str) -> str:
+    """Read the Rust toolchain version pinned by the tag's rust-toolchain.toml."""
+    content = api(
+        f"repos/{LADYBIRD_REPO}/contents/rust-toolchain.toml",
+        {"ref": tag},
+    )
+    import base64
+
+    raw = base64.b64decode(content["content"]).decode("utf-8")
+    match = re.search(r'^channel\s*=\s*"([^"]+)"', raw, re.MULTILINE)
+    if not match:
+        raise RuntimeError(f"Could not find Rust channel in {tag}/rust-toolchain.toml")
+    log(f"Rust toolchain for {tag}: {match.group(1)}")
+    return match.group(1)
+
+
 def first_line(body: str) -> str:
     """Condense a commit body into a one-line description."""
     lines = [ln.strip() for ln in (body or "").splitlines() if ln.strip()]
@@ -248,10 +264,22 @@ def render_notes(tag: str, previous: str | None, commits: list[dict], stats: dic
     return "\n".join(lines)
 
 
-def build_package(tag: str, baseline: str, repo_root: Path, variant: dict[str, str]) -> Path:
+def build_package(
+    tag: str, baseline: str, rust_ver: str, repo_root: Path, variant: dict[str, str]
+) -> Path:
     arch = variant["arch"]
     workdir = Path(tempfile.mkdtemp(prefix=f"ladybird-pkg-{arch}-"))
     log(f"building {tag} for {arch} in {workdir}")
+
+    # Upstream pins an exact Rust version; a newer distro rustc turns upstream
+    # deprecation warnings into errors (-D warnings), so use the pinned one.
+    subprocess.run(
+        [
+            "rustup", "toolchain", "install", rust_ver,
+            "--profile", "minimal", "--component", "rustfmt", "--component", "clippy",
+        ],
+        check=True,
+    )
     for name in ("PKGBUILD", "patches/hb-fc-whole-archive.patch", "patches/gcc-build.patch"):
         src = repo_root / name
         dst = workdir / Path(name).name
@@ -283,6 +311,12 @@ def build_package(tag: str, baseline: str, repo_root: Path, variant: dict[str, s
             "MAKEFLAGS": "-j2",
             "CMAKE_BUILD_PARALLEL_LEVEL": "2",
             "VCPKG_DOWNLOADS": str(downloads),
+            "RUSTUP_TOOLCHAIN": rust_ver,
+            "RUSTUP_HOME": str(Path(os.environ.get("HOME", "/home/builder")) / ".rustup"),
+            "CARGO_HOME": str(Path(os.environ.get("HOME", "/home/builder")) / ".cargo"),
+            "PATH": str(Path(os.environ.get("HOME", "/home/builder")) / ".cargo/bin")
+            + os.pathsep
+            + os.environ.get("PATH", "/usr/bin:/bin"),
             # Apply the same architecture flags to third-party vcpkg libraries.
             "VCPKG_C_FLAGS": variant["march"],
             "VCPKG_CXX_FLAGS": variant["march"],
@@ -383,7 +417,10 @@ def main() -> int:
         notes_file.write_text(notes, encoding="utf-8")
 
         baseline = vcpkg_baseline(tag)
-        packages = [build_package(tag, baseline, repo_root, variant) for variant in VARIANTS]
+        rust_ver = rust_channel(tag)
+        packages = [
+            build_package(tag, baseline, rust_ver, repo_root, variant) for variant in VARIANTS
+        ]
         publish(tag, packages, notes_file)
         log(f"published for {tag}: {', '.join(p.name for p in packages)}")
 

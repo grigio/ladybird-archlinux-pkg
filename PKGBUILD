@@ -68,6 +68,7 @@ prepare() {
   export VCPKG_DISABLE_METRICS='true'
   export VCPKG_DOWNLOADS="${VCPKG_DOWNLOADS:-${HOME}/.cache/vcpkg/downloads}"
   unset CARGO_TARGET_DIR
+  export RUSTUP_TOOLCHAIN="${RUSTUP_TOOLCHAIN:-$(sed -n 's/^channel = "\(.*\)"/\1/p' ladybird/rust-toolchain.toml)}"
 
   # GCC cannot do LTO on the Release build; match the upstream AUR recipe.
   local use_linker=
@@ -107,6 +108,7 @@ build() {
   export VCPKG_DISABLE_METRICS='true'
   export VCPKG_DOWNLOADS="${VCPKG_DOWNLOADS:-${HOME}/.cache/vcpkg/downloads}"
   unset CARGO_TARGET_DIR
+  export RUSTUP_TOOLCHAIN="${RUSTUP_TOOLCHAIN:-$(sed -n 's/^channel = "\(.*\)"/\1/p' ladybird/rust-toolchain.toml)}"
 
   cmake --build build
 }

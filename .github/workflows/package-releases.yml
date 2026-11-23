@@ -35,7 +35,7 @@ jobs:
         run: |
           set -euo pipefail
           pacman -Syu --noconfirm --needed \
-            base-devel git sudo github-cli jq python rust ccache
+            base-devel git sudo github-cli jq python rustup ccache
           useradd --create-home --shell /bin/bash builder
           echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
           chmod 0440 /etc/sudoers.d/builder
