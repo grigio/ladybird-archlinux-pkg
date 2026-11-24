@@ -2,8 +2,12 @@
 
 ## Status
 
-Draft. This is technical feedback for Ladybird maintainers. It will be finalized
-after the CI build that applies the workaround completes successfully.
+Confirmed on 2026-11-24. The workaround was validated in a successful CI build:
+https://github.com/grigio/ladybird-archlinux-pkg/actions/runs/45352078989
+
+This is technical feedback for Ladybird maintainers. Per the project
+participation guidelines, it is not submitted as a pull request or a GitHub
+build issue.
 
 ## Submission route
 

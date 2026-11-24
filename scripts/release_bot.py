@@ -187,7 +187,7 @@ def render_notes(tag: str, previous: str | None, commits: list[dict], stats: dic
     lines.append(f"# Ladybird {tag} — Arch Linux package")
     lines.append("")
     lines.append(
-        f"Prebuilt Arch Linux packages for upstream tag "
+        f"Prebuilt Arch Linux package for upstream tag "
         f"[`{tag}`](https://github.com/{LADYBIRD_REPO}/releases/tag/{tag})."
     )
     lines.append("")
