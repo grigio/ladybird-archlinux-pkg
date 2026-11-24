@@ -46,6 +46,12 @@ With the GitHub CLI:
 gh workflow run package-releases.yml -f tag=2026.47.7
 ```
 
+## Runtime note
+
+The package removes the bundled ICU shared libraries and uses the system ICU 78
+instead. The bundled `libicudata.so.78` stub crashes the dynamic linker at
+startup on some glibc builds.
+
 ## Install a released package
 
 ```bash

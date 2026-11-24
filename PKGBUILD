@@ -131,6 +131,13 @@ package() {
   ln -s /opt/ladybird/bin/js "${pkgdir}/usr/bin/js"
   ln -s /opt/ladybird/bin/wasm "${pkgdir}/usr/bin/wasm"
 
+  # The bundled ICU data library is a small stub that crashes the dynamic
+  # linker at startup on this system. Arch/CachyOS ship a compatible ICU 78,
+  # so use that instead of the bundled copies.
+  rm -f "${pkgdir}/opt/ladybird/lib"/libicudata.so.78* \
+        "${pkgdir}/opt/ladybird/lib"/libicui18n.so.78* \
+        "${pkgdir}/opt/ladybird/lib"/libicuuc.so.78*
+
   find "${pkgdir}" -name '*.a' -delete
   find "${pkgdir}" -name '*.cmake' -delete
 
