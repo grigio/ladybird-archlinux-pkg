@@ -53,6 +53,14 @@ gh release download <tag> --repo <owner>/<this-repo> --pattern '*.pkg.tar.zst'
 sudo pacman -U ./*.pkg.tar.zst
 ```
 
+## Upstream feedback
+
+The static link cycle encountered while building this package, the verified
+workaround, and suggested upstream fixes are documented in
+[`docs/upstream-feedback.md`](docs/upstream-feedback.md). Per Ladybird's
+contribution guidelines, this is prepared as technical feedback for the
+maintainers rather than as a pull request or a GitHub build issue.
+
 ## Layout
 
 | Path | Purpose |
