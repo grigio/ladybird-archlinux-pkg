@@ -28,6 +28,13 @@ def main() -> int:
                 line = f"{PREFIX}-Wl,--start-group {value} -Wl,--end-group\n"
                 wrapped += 1
         out.append(line)
+    if wrapped == 0:
+        print(
+            f"[fix-ninja] ERROR: no LINK_LIBRARIES lines wrapped in {ninja}; "
+            "the CMake/Ninja format may have changed",
+            file=sys.stderr,
+        )
+        return 1
     ninja.write_text("".join(out), encoding="utf-8")
     print(f"[fix-ninja] wrapped {wrapped} link lines in linker groups")
     return 0
