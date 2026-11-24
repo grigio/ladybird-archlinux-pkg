@@ -279,6 +279,7 @@ def build_package(tag: str, baseline: str, rust_ver: str, repo_root: Path) -> Pa
         "patches/hb-fc-whole-archive.patch",
         "patches/gcc-build.patch",
         "patches/v3-cpu-target.patch",
+        "scripts/fix_ninja_link_groups.py",
     ):
         src = repo_root / name
         dst = workdir / Path(name).name

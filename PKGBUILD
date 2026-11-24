@@ -111,6 +111,9 @@ build() {
   unset CARGO_TARGET_DIR
   export RUSTUP_TOOLCHAIN="${RUSTUP_TOOLCHAIN:-$(sed -n 's/^channel = "\(.*\)"/\1/p' ladybird/rust-toolchain.toml)}"
 
+  # Resolve the C++ <-> Rust static-link cycle by making ld rescan all archives.
+  python3 fix_ninja_link_groups.py build/build.ninja
+
   cmake --build build
 }
 
