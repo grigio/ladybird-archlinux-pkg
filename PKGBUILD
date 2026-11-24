@@ -54,6 +54,7 @@ source=(
   'hb-fc-whole-archive.patch'
   'gcc-build.patch'
   'v3-cpu-target.patch'
+  'fix_ninja_link_groups.py'
 )
 sha256sums=(
   'SKIP'
@@ -61,6 +62,7 @@ sha256sums=(
   'e268aed76a27dc8519be00f6c30a59ce2339683127839f8e097d14d92d7b4268'
   '74cc7d68b7531f3fbe0eab9500a79d90f4f5b5ee8e02bcf0d94fbd980a50c2b0'
   '4ad65e72cd1d005d7aa144394442036631cfb54da7c996d1667eb60c9c1d2973'
+  '65d0b5804e54bef754c5fa127dc890c180c67f536a892c6386779aafcc631b05'
 )
 
 prepare() {
